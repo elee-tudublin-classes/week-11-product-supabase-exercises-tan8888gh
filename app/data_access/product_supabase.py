@@ -15,12 +15,14 @@ supabase: Client = create_client(db_url, db_key)
 
 # get all products
 def dataGetProducts():
-    response = (supabase.table("product")
-                .select("*")
-                .order("title", desc=False)
-                .execute()
-    )
+    # response = (supabase.table("product")
+    #             .select("*")
+    #             .order("title", desc=False)
+    #             .execute()
+    # )
+    # category{"name":value}
 
+    response = supabase.from_('product').select('thumbnail,id,category(name),title,description,stock,price').execute()
     return response.data
 
 # get product by id
@@ -48,11 +50,14 @@ def dataUpdateProduct(product: Product) :
 
 # add product, accepts product object
 def dataAddProduct(product: Product) :
-    response = (
-        supabase.table("product")
-        .insert(product.dict()) # convert product object to dict - required by Supabase
-        .execute()
-    )
+    # response = (
+    #     supabase.table("product")
+    #     .insert(product.dict()) # convert product object to dict - required by Supabase
+    #     .execute()
+    # )
+    category_response=supabase.table("category").select("id").eq("name",product.category_name).execute()
+
+    response=supabase.table("product").insert({"category_id":category_response.data[0]["id"],"title":product.title,"description":product.description,"stock":product.stock,"price":product.price,"thumbnail":product.thumbnail}).execute()
     # result is 1st item in the list
     return response.data[0]
 
@@ -76,4 +81,8 @@ def dataDeleteProduct(id):
         .eq('id', id)
         .execute()
     )
+    return response.data
+
+def dataGetProductsByCategory(id):
+    response = supabase.from_('product').select('thumbnail,id,category(name),title,description,stock,price').eq("category_id",id).execute()
     return response.data
